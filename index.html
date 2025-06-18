@@ -1,167 +1,206 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Memorama EOS</title>
   <style>
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
+      font-family: sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 1rem;
     }
     h1 {
-      color: #003366;
+      color: #0c3c60;
     }
-    #game {
+    .board {
       display: grid;
       gap: 10px;
-      justify-content: center;
-      margin-bottom: 20px;
+      margin-top: 1rem;
     }
     .card {
       width: 80px;
       height: 80px;
-      background-color: #003366;
+      background-color: #0c3c60;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
+      color: white;
+      font-size: 24px;
       cursor: pointer;
-      border-radius: 8px;
     }
     .card img {
       width: 100%;
       height: 100%;
-      border-radius: 8px;
+      object-fit: contain;
+      border-radius: 10px;
     }
-    #status {
-      margin-bottom: 10px;
-      font-size: 1.1em;
+    .info, .ranking {
+      margin-top: 1rem;
+    }
+    .ranking {
+      display: none;
     }
   </style>
 </head>
 <body>
   <h1>Memorama EOS</h1>
-  <div id="status">Puntos: 0 | Tiempo: 0s</div>
-  <div id="game"></div>
+  <div>
+    <label>Nombre de usuario: <input type="text" id="username" /></label>
+    <button onclick="startGame()">Iniciar</button>
+  </div>
+  <div class="info">
+    <p>Nivel: <span id="level">1</span> | Tiempo: <span id="time">0</span>s | Puntos: <span id="score">0</span> | Intentos restantes: <span id="attempts">2</span></p>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="ranking" id="ranking"></div>
 
   <script>
-    const levels = [
-      ['img1.png','img1.png','img2.png','img2.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png','img9.png','img9.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png','img9.png','img9.png','img10.png','img10.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png','img9.png','img9.png','img10.png','img10.png','img11.png','img11.png'],
-      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png','img9.png','img9.png','img10.png','img10.png','img11.png','img11.png','img12.png','img12.png']
-    ];
+    const board = document.getElementById('board');
+    const levelSpan = document.getElementById('level');
+    const timeSpan = document.getElementById('time');
+    const scoreSpan = document.getElementById('score');
+    const attemptsSpan = document.getElementById('attempts');
+    const usernameInput = document.getElementById('username');
+    const rankingDiv = document.getElementById('ranking');
 
-    let currentLevel = 0;
-    let attempts = 0;
+    const maxPairs = 12;
+    let currentLevel = 1;
     let score = 0;
-    let timeLeft = 10;
-
-    const game = document.getElementById('game');
-    const statusText = document.getElementById('status');
-    let firstCard = null;
-    let secondCard = null;
     let timer;
+    let remainingTime;
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let attempts = 2;
+    let username = '';
 
-    function shuffle(array) {
-      return array.sort(() => Math.random() - 0.5);
+    const imageList = Array.from({ length: maxPairs }, (_, i) => `img${i + 1}.png`);
+
+    function getTimeForLevel(pairs) {
+      switch (pairs) {
+        case 4: return 20;
+        case 6: return 35;
+        case 8: return 50;
+        case 10: return 65;
+        case 12: return 80;
+        default: return 60;
+      }
     }
 
-    function startLevel() {
-      const levelCards = shuffle([...levels[currentLevel]]);
-      const size = Math.sqrt(levelCards.length);
-      game.innerHTML = '';
-      game.style.gridTemplateColumns = `repeat(${Math.ceil(levelCards.length / size)}, 1fr)`;
-      levelCards.forEach(src => {
-        const card = document.createElement('div');
-        card.classList.add('card');
-        card.dataset.src = src;
-        card.addEventListener('click', onCardClick);
-        game.appendChild(card);
-      });
+    function startGame() {
+      username = usernameInput.value.trim();
+      if (!username) {
+        alert('Por favor ingresa tu nombre');
+        return;
+      }
+      currentLevel = 1;
+      score = 0;
+      scoreSpan.textContent = score;
+      startLevel(4);
+    }
 
-      timeLeft = 10 + currentLevel * 10;
-      updateStatus();
+    function startLevel(pairs) {
+      board.innerHTML = '';
+      flippedCards = [];
+      matchedPairs = 0;
+      levelSpan.textContent = currentLevel;
+      attempts = 2;
+      attemptsSpan.textContent = attempts;
+      rankingDiv.style.display = 'none';
+
+      const selectedImages = imageList.slice(0, pairs);
+      const cards = [...selectedImages, ...selectedImages]
+        .sort(() => 0.5 - Math.random())
+        .map(src => {
+          const card = document.createElement('div');
+          card.classList.add('card');
+          card.dataset.src = src;
+          card.addEventListener('click', handleCardClick);
+          return card;
+        });
+
+      board.style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(pairs * 2))}, 1fr)`;
+      cards.forEach(card => board.appendChild(card));
+
+      remainingTime = getTimeForLevel(pairs);
+      timeSpan.textContent = remainingTime;
       clearInterval(timer);
       timer = setInterval(() => {
-        timeLeft--;
-        updateStatus();
-        if (timeLeft <= 0) {
+        remainingTime--;
+        timeSpan.textContent = remainingTime;
+        if (remainingTime <= 0) {
           clearInterval(timer);
-          alert('Se acabó el tiempo 😢');
-          resetGame();
+          endGame('¡Se acabó el tiempo!');
         }
       }, 1000);
     }
 
-    function onCardClick(e) {
+    function handleCardClick(e) {
       const card = e.currentTarget;
-      if (card.classList.contains('flipped') || secondCard) return;
+      if (card.children.length || flippedCards.length >= 2) return;
 
       const img = document.createElement('img');
       img.src = card.dataset.src;
       card.appendChild(img);
-      card.classList.add('flipped');
+      flippedCards.push(card);
 
-      if (!firstCard) {
-        firstCard = card;
-      } else {
-        secondCard = card;
-        attempts++;
-        if (firstCard.dataset.src === secondCard.dataset.src) {
-          firstCard = null;
-          secondCard = null;
+      if (flippedCards.length === 2) {
+        const [first, second] = flippedCards;
+        if (first.dataset.src === second.dataset.src) {
+          matchedPairs++;
           score += 10;
-          if (document.querySelectorAll('.flipped').length === levels[currentLevel].length) {
+          scoreSpan.textContent = score;
+          flippedCards = [];
+          if (matchedPairs === currentLevel * 2) {
             clearInterval(timer);
-            alert('¡Nivel completado! 🎉');
-            currentLevel++;
-            if (currentLevel < levels.length) {
-              startLevel();
+            if (currentLevel < maxPairs / 2) {
+              currentLevel++;
+              setTimeout(() => startLevel(currentLevel * 2), 1000);
             } else {
-              alert('¡Felicidades! Terminaste todos los niveles 🎊');
-              resetGame();
+              endGame('¡Ganaste el juego completo!');
             }
           }
         } else {
+          attempts--;
+          attemptsSpan.textContent = attempts;
+          if (attempts <= 0) {
+            clearInterval(timer);
+            endGame('¡Se acabaron los intentos!');
+            return;
+          }
           setTimeout(() => {
-            firstCard.innerHTML = '';
-            secondCard.innerHTML = '';
-            firstCard.classList.remove('flipped');
-            secondCard.classList.remove('flipped');
-            firstCard = null;
-            secondCard = null;
-          }, 700);
+            flippedCards.forEach(c => c.innerHTML = '');
+            flippedCards = [];
+          }, 1000);
         }
       }
-
-      updateStatus();
     }
 
-    function updateStatus() {
-      statusText.textContent = `Puntos: ${score} | Tiempo: ${timeLeft}s`;
+    function endGame(message) {
+      alert(message + ' Tu puntuación final es: ' + score);
+      saveScore();
+      showRanking();
     }
 
-    function resetGame() {
-      currentLevel = 0;
-      score = 0;
-      startLevel();
+    function saveScore() {
+      const scores = JSON.parse(localStorage.getItem('memoramaScores') || '[]');
+      scores.push({ name: username, score });
+      scores.sort((a, b) => b.score - a.score);
+      localStorage.setItem('memoramaScores', JSON.stringify(scores));
     }
 
-    startLevel();
+    function showRanking() {
+      const scores = JSON.parse(localStorage.getItem('memoramaScores') || '[]');
+      rankingDiv.innerHTML = '<h2>Ranking</h2>' +
+        '<ol>' + scores.map(s => `<li>${s.name}: ${s.score} puntos</li>`).join('') + '</ol>';
+      rankingDiv.style.display = 'block';
+    }
   </script>
 </body>
 </html>
