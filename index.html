@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Memorama EOS</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    h1 {
+      color: #003366;
+    }
+    #game {
+      display: grid;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .card {
+      width: 80px;
+      height: 80px;
+      background-color: #003366;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    .card img {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+    }
+    #status {
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Memorama EOS</h1>
+  <div id="status">Puntos: 0 | Tiempo: 0s</div>
+  <div id="game"></div>
+
+  <script>
+    const levels = [
+      ['img1.png','img1.png','img2.png','img2.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png','img9.png','img9.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png','img9.png','img9.png','img10.png','img10.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png','img9.png','img9.png','img10.png','img10.png','img11.png','img11.png'],
+      ['img1.png','img1.png','img2.png','img2.png','img3.png','img3.png','img4.png','img4.png','img5.png','img5.png','img6.png','img6.png','img7.png','img7.png','img8.png','img8.png','img9.png','img9.png','img10.png','img10.png','img11.png','img11.png','img12.png','img12.png']
+    ];
+
+    let currentLevel = 0;
+    let attempts = 0;
+    let score = 0;
+    let timeLeft = 10;
+
+    const game = document.getElementById('game');
+    const statusText = document.getElementById('status');
+    let firstCard = null;
+    let secondCard = null;
+    let timer;
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function startLevel() {
+      const levelCards = shuffle([...levels[currentLevel]]);
+      const size = Math.sqrt(levelCards.length);
+      game.innerHTML = '';
+      game.style.gridTemplateColumns = `repeat(${Math.ceil(levelCards.length / size)}, 1fr)`;
+      levelCards.forEach(src => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.dataset.src = src;
+        card.addEventListener('click', onCardClick);
+        game.appendChild(card);
+      });
+
+      timeLeft = 10 + currentLevel * 10;
+      updateStatus();
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        updateStatus();
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          alert('Se acabó el tiempo 😢');
+          resetGame();
+        }
+      }, 1000);
+    }
+
+    function onCardClick(e) {
+      const card = e.currentTarget;
+      if (card.classList.contains('flipped') || secondCard) return;
+
+      const img = document.createElement('img');
+      img.src = card.dataset.src;
+      card.appendChild(img);
+      card.classList.add('flipped');
+
+      if (!firstCard) {
+        firstCard = card;
+      } else {
+        secondCard = card;
+        attempts++;
+        if (firstCard.dataset.src === secondCard.dataset.src) {
+          firstCard = null;
+          secondCard = null;
+          score += 10;
+          if (document.querySelectorAll('.flipped').length === levels[currentLevel].length) {
+            clearInterval(timer);
+            alert('¡Nivel completado! 🎉');
+            currentLevel++;
+            if (currentLevel < levels.length) {
+              startLevel();
+            } else {
+              alert('¡Felicidades! Terminaste todos los niveles 🎊');
+              resetGame();
+            }
+          }
+        } else {
+          setTimeout(() => {
+            firstCard.innerHTML = '';
+            secondCard.innerHTML = '';
+            firstCard.classList.remove('flipped');
+            secondCard.classList.remove('flipped');
+            firstCard = null;
+            secondCard = null;
+          }, 700);
+        }
+      }
+
+      updateStatus();
+    }
+
+    function updateStatus() {
+      statusText.textContent = `Puntos: ${score} | Tiempo: ${timeLeft}s`;
+    }
+
+    function resetGame() {
+      currentLevel = 0;
+      score = 0;
+      startLevel();
+    }
+
+    startLevel();
+  </script>
+</body>
+</html>
