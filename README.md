@@ -13,24 +13,24 @@ Este es un memorama digital minimalista diseñado para adultos, con imágenes de
 - Si aciertas una pareja, sumas puntos. Si no, las tarjetas se voltean.
 - Si completas la ronda a tiempo, pasas al siguiente nivel.
 
-## Características
+##   Características
 
 - 🟦 Color azul corporativo de EOS para las tarjetas ocultas
 - ⏱ Temporizador por ronda
 - 🔢 Puntuación dinámica
 - 📲 Compatible con celular (responsive)
 
-## Archivos
+##   Archivos
 
 - `index.html`: estructura del juego
 - `img1.png` a `img12.png`: imágenes de las tarjetas (en la misma carpeta)
 - `README.md`: este archivo
 
-## 🌐 Ver el juego en vivo
+##   Ver el juego en vivo
 
- https://stephasaurio.github.io/Memorama-eos/
+  https://stephasaurio.github.io/Memorama-eos/
 
-## ✨ Créditos
+##   Créditos
 
 Desarrollado con amor por Stephasaurio 💙  
 Imágenes provistas por EOS Technologies.
